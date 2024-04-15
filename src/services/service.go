@@ -20,11 +20,12 @@ type IService[P any, R any] interface {
 }
 
 func (s *serviceDetail[P, R]) GetProcessMsg() func(msg amqp.Delivery) {
-	f := func(msg amqp.Delivery) {
+	return func(msg amqp.Delivery) {
 		var message domain.DetailRabbitMsg
 		if err := json.Unmarshal(msg.Body, &message); err != nil {
 			fmt.Printf("error deserialization")
 		}
+		fmt.Println(message)
 		res := s.scraper(message.Url)
 		id, err := s.mongoRepo.Create(res)
 		if err != nil {
@@ -32,7 +33,6 @@ func (s *serviceDetail[P, R]) GetProcessMsg() func(msg amqp.Delivery) {
 		}
 		fmt.Println("detail id: %s\n ", id.String())
 	}
-	return f
 }
 func InitDetailService[P any, R domain.Detail](
 	ch *amqp.Channel, mongoRepo mongo_repo.IRepository[R],

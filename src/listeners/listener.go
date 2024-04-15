@@ -21,6 +21,6 @@ type IListeners interface {
 	Run() func()
 }
 
-func InitListeners(Consumer <-chan amqp.Delivery) IListeners {
-	return &listener{consumer: Consumer}
+func InitListeners(Consumer <-chan amqp.Delivery, service func(msg amqp.Delivery)) IListeners {
+	return &listener{consumer: Consumer, service: service}
 }

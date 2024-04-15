@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/Mufraggi/scraper_article/src/domain"
 	"github.com/Mufraggi/scraper_article/src/listeners"
 	"github.com/Mufraggi/scraper_article/src/mongo_repo"
@@ -52,16 +53,19 @@ func main() {
 	})
 	repoDetail := mongo_repo.InitDetailRepository(db)
 	_ = rabbits.InitQueue(ch, "detail")
-	consume, _ := rabbits.Consume(ch, "detail")
+	consume, err := rabbits.Consume(ch, "detail")
+	fmt.Println(err)
 	getDetail := announce.GetAnnounceDetail()
 
 	service := services.InitDetailService[TmpPublish, domain.Detail](ch, repoDetail, getDetail)
-	listeners.InitListeners(consume)
+	process := service.GetProcessMsg()
+	runDetail := listeners.InitListeners(consume, process).Run()
+	go runDetail()
 	//announce.GetAnnounceDetail("https://immobilier.lefigaro.fr/annonces/annonce-68148436.html")
 	//url := "https://immobilier.lefigaro.fr/annonces/annonce-68271282.html"
 	//url := "https://immobilier.lefigaro.fr/annonces/annonce-68271204.html"
-	url := "https://immobilier.lefigaro.fr/annonces/annonce-68268986.html"
-	tmp := announce.GetAnnounceDetail()
-	tmp(url)
+	//	url := "https://immobilier.lefigaro.fr/annonces/annonce-68268986.html"
 
+	fmt.Println("that run ")
+	select {}
 }
