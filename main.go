@@ -8,6 +8,7 @@ import (
 	"github.com/Mufraggi/scraper_article/src/mongo_repo"
 	"github.com/Mufraggi/scraper_article/src/rabbits"
 	"github.com/Mufraggi/scraper_article/src/scrapers/announce"
+	"github.com/Mufraggi/scraper_article/src/scrapers/list_announce"
 	"github.com/Mufraggi/scraper_article/src/services"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,10 +16,6 @@ import (
 	"log"
 )
 
-type TmpPublish struct {
-	Id  string `json:"id"`
-	Url string `json:"url"`
-}
 type DatabaseMongoConfig struct {
 	MongoURI     string
 	DatabaseName string
@@ -52,15 +49,26 @@ func main() {
 		DatabaseName: "testdb",
 	})
 	repoDetail := mongo_repo.InitDetailRepository(db)
+	repoListAnnounce := mongo_repo.InitAnnounceCardRepository(db)
+	_ = rabbits.InitQueue(ch, "list_announce")
 	_ = rabbits.InitQueue(ch, "detail")
-	consume, err := rabbits.Consume(ch, "detail")
-	fmt.Println(err)
-	getDetail := announce.GetAnnounceDetail()
 
-	service := services.InitDetailService[TmpPublish, domain.Detail](ch, repoDetail, getDetail)
-	process := service.GetProcessMsg()
+	consume, _ := rabbits.Consume(ch, "detail")
+	consumerListAnnounce, _ := rabbits.Consume(ch, "list_announce")
+	getDetail := announce.GetAnnounceDetail()
+	listAnnounce := list_announce.GetListAnnounce()
+
+	serviceDetail := services.InitDetailService[domain.DetailPublish](ch, repoDetail, getDetail)
+	process := serviceDetail.GetProcessMsg()
 	runDetail := listeners.InitListeners(consume, process).Run()
 	go runDetail()
+
+	serviceListAnnounce := services.InitAnnounceCardService[domain.DetailPublish](
+		ch, repoListAnnounce, listAnnounce)
+	processListAnnounce := serviceListAnnounce.GetProcessMsg()
+	runList := listeners.InitListeners(consumerListAnnounce, processListAnnounce).Run()
+	go runList()
+
 	//announce.GetAnnounceDetail("https://immobilier.lefigaro.fr/annonces/annonce-68148436.html")
 	//url := "https://immobilier.lefigaro.fr/annonces/annonce-68271282.html"
 	//url := "https://immobilier.lefigaro.fr/annonces/annonce-68271204.html"

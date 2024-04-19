@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-func GetListAnnounce(url string) func(url string) []domain.AnnounceCard {
-	return func(url string) []domain.AnnounceCard {
-		res, err := http.Get("https://immobilier.lefigaro.fr/annonces/immobilier-vente-appartement-nice+06000.html")
+func GetListAnnounce() func(url string) domain.ListAnnounceCard {
+	return func(url string) domain.ListAnnounceCard {
+		res, err := http.Get(url)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -23,7 +23,7 @@ func GetListAnnounce(url string) func(url string) []domain.AnnounceCard {
 			log.Fatal(err)
 		}
 		// Find the review items
-		var announces []domain.AnnounceCard
+		var announces domain.ListAnnounceCard
 		doc.Find(".classified-card__content").Each(func(i int, s *goquery.Selection) {
 			price := strings.TrimSpace(s.Find(".content__price").Text())
 			link, exists := s.Find(".content__link").Attr("href")

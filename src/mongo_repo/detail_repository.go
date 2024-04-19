@@ -48,7 +48,7 @@ func (c *DetailRepository) FindById(id primitive.ObjectID) (*domain.Detail, erro
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			fmt.Println("Company not found")
 		} else {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		return nil, err
 	}

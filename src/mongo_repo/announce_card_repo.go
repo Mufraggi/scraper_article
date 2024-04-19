@@ -17,7 +17,7 @@ type AnnounceCardRepository struct {
 }
 
 func InitAnnounceCardRepository(db *mongo.Database) IRepository[domain.AnnounceCard] {
-	c := db.Collection("detail")
+	c := db.Collection("AnnounceCard")
 	return &AnnounceCardRepository{collection: c}
 }
 
@@ -48,7 +48,7 @@ func (c *AnnounceCardRepository) FindById(id primitive.ObjectID) (*domain.Announ
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			fmt.Println("Company not found")
 		} else {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		return nil, err
 	}
