@@ -11,7 +11,7 @@ import (
 
 type serviceAnnounceCard[P domain.DetailPublish] struct {
 	publish   func(queueName string, msg domain.DetailPublish) error
-	scraper   func(url string) domain.ListAnnounceCard
+	scraper   func(url string) (domain.ListAnnounceCard, error)
 	mongoRepo mongo_repo.IRepository[domain.AnnounceCard]
 }
 
@@ -23,7 +23,10 @@ func (s *serviceAnnounceCard[P]) GetProcessMsg() func(msg amqp.Delivery) {
 			fmt.Printf("error deserialization")
 		}
 
-		res := scraper(message.Url)
+		res, err := scraper(message.Url)
+		if err != nil {
+			return
+		}
 		for _, v := range res {
 			id, err := s.mongoRepo.Create(v)
 			if err != nil {
@@ -42,7 +45,7 @@ func (s *serviceAnnounceCard[P]) GetProcessMsg() func(msg amqp.Delivery) {
 func InitAnnounceCardService[P domain.DetailPublish](
 	ch *amqp.Channel,
 	mongoRepo mongo_repo.IRepository[domain.AnnounceCard],
-	scraper func(url string) domain.ListAnnounceCard,
+	scraper func(url string) (domain.ListAnnounceCard, error),
 ) IService[P] {
 	publish := rabbits.Publish[domain.DetailPublish](ch)
 	return &serviceAnnounceCard[P]{publish: publish, scraper: scraper, mongoRepo: mongoRepo}

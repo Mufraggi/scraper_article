@@ -1,6 +1,7 @@
 package list_announce
 
 import (
+	"fmt"
 	"github.com/Mufraggi/scraper_article/src/domain"
 	"github.com/PuerkitoBio/goquery"
 	"log"
@@ -8,19 +9,19 @@ import (
 	"strings"
 )
 
-func GetListAnnounce() func(url string) domain.ListAnnounceCard {
-	return func(url string) domain.ListAnnounceCard {
+func GetListAnnounce() func(url string) (domain.ListAnnounceCard, error) {
+	return func(url string) (domain.ListAnnounceCard, error) {
 		res, err := http.Get(url)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer res.Body.Close()
 		if res.StatusCode != 200 {
-			log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+			return nil, fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 		}
 		doc, err := goquery.NewDocumentFromReader(res.Body)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		// Find the review items
 		var announces domain.ListAnnounceCard
@@ -46,6 +47,6 @@ func GetListAnnounce() func(url string) domain.ListAnnounceCard {
 			}
 			announces = append(announces, announce)
 		})
-		return announces
+		return announces, nil
 	}
 }

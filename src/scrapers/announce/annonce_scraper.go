@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-func GetAnnounceDetail() func(url string) domain.Detail {
-	return func(url string) domain.Detail {
+func GetAnnounceDetail() func(url string) (*domain.Detail, error) {
+	return func(url string) (*domain.Detail, error) {
 		res, err := http.Get(url)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		defer res.Body.Close()
 		if res.StatusCode != 200 {
@@ -20,7 +20,7 @@ func GetAnnounceDetail() func(url string) domain.Detail {
 		}
 		doc, err := goquery.NewDocumentFromReader(res.Body)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		d := domain.Detail{}
 		doc.Find(".classified-dpe__ges").Each(func(i int, s *goquery.Selection) {
@@ -43,6 +43,6 @@ func GetAnnounceDetail() func(url string) domain.Detail {
 			d.Price = strings.TrimSpace(s.Find(".classified-price-per-m2 strong").Text())
 			d.Description = strings.TrimSpace(s.Find(".classified-description p.truncated-description span").Text())
 		})
-		return d
+		return &d, nil
 	}
 }
